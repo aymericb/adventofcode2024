@@ -23,4 +23,16 @@ const distances = l1.map((x, i) => Math.abs(l2[i] - x));
 // console.log(distances);
 
 const sum = distances.reduce((acc, x) => acc + x, 0);
-console.log(sum);
+console.log("Solution to part 1:", sum);
+
+const m2 = new Map<number, number>();
+for (const x of l2) {
+  m2.set(x, (m2.get(x) || 0) + 1);
+}
+// console.log(m2);
+
+const similarities = l1.map(x => (m2.get(x) || 0) * x);
+// console.log(similarities);
+
+const simscore = similarities.reduce((acc, x) => acc + x, 0);
+console.log("Solution to part 2:", simscore);
