@@ -11,10 +11,11 @@ const sum = Array.from(text.matchAll(re))
 console.log("Solution to part 1:", sum);
 
 // Part 2
-const re2 = /(mul\(([0-9]{1,3})\,([0-9]{1,3})\))|(don't\(\))|do\(\)/g;
+const re2 = /(mul\(([0-9]{1,3})\,([0-9]{1,3})\))|(don't\(\))|(do\(\))/g;
 // const sample = "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))";
 const matches = Array.from(text.matchAll(re2));
 
+// My input data is pathological, I don't need to handle the 'state' at all… everything is summed up!
 let state = true;
 let sum2 = 0;
 for (const match of matches) {
