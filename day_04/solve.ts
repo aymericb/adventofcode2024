@@ -1,5 +1,5 @@
-// const text = await Deno.readTextFile("input.txt");
-const text = await Deno.readTextFile("sample.txt");
+const text = await Deno.readTextFile("input.txt");
+// const text = await Deno.readTextFile("sample.txt");
 
 // index: row, col 
 const grid = text.trim().split("\n").map(line => line.split(""));
