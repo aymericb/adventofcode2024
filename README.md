@@ -12,3 +12,4 @@ No chance being on the leaderboard since I'm asleep when new puzzles are reveale
 - [Day 2](day_02)
 - [Day 3](day_03)
 - [Day 4](day_04)
+- [Day 4](day_05)
