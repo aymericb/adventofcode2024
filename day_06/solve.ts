@@ -1,5 +1,5 @@
-// const text = await Deno.readTextFile("input.txt");
-const text = await Deno.readTextFile("sample.txt");
+const text = await Deno.readTextFile("input.txt");
+// const text = await Deno.readTextFile("sample.txt");
 
 type Direction = "N" | "E" | "S" | "W";
 
@@ -124,7 +124,7 @@ function printGrid(grid: Node[][]) {
     });
 }
 
-printGrid(part1Grid);
+// printGrid(part1Grid);
 const sum = part1Grid.reduce((acc, row) => {
     return acc + row.filter(n => n.visited).length;
 }, 0);

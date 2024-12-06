@@ -56,6 +56,7 @@ fn parse_data(data: &str) -> (Grid, Guard) {
     (Grid { nodes: grid, width, height }, guard.unwrap())
 }
 
+#[allow(dead_code)]
 fn print_grid(grid: &Grid) {
     for row in &grid.nodes {
         for node in row {
@@ -132,12 +133,32 @@ fn part1(guard: &Guard, grid: &Grid) -> usize {
     grid.nodes.iter().map(|row| row.iter().filter(|n| n.direction.is_some()).count()).sum::<usize>()
 }
 
+// Very slow, but it works
+fn part2(guard: &Guard, grid: &Grid) -> usize {
+    let mut count = 0;
+    for row in 0..grid.height {
+        for col in 0..grid.width {
+            if row == guard.row && col == guard.col { continue; }
+            let mut grid = grid.clone();
+            grid.nodes[row][col].obstacle = true;
+            let mut guard = guard.clone();
+            let mut status = ExitResult::Progress;
+            while status == ExitResult::Progress {
+                status = move_guard(&mut guard, &mut grid);
+            }
+            if status == ExitResult::InfiniteLoop {
+                count += 1;
+            }
+        }
+    }
+    count
+}
 
 fn main() {
-    // let data = std::fs::read_to_string("input.txt").unwrap();
-    let data = std::fs::read_to_string("sample.txt").unwrap();
+    let data = std::fs::read_to_string("input.txt").unwrap();
+    // let data = std::fs::read_to_string("sample.txt").unwrap();
     
-    let (mut grid, mut guard) = parse_data(&data);
+    let (grid, guard) = parse_data(&data);
     println!("Part 1: {}", part1(&guard, &grid));
-
+    println!("Part 2: {}", part2(&guard, &grid));
 }
