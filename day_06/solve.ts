@@ -1,5 +1,5 @@
-const text = await Deno.readTextFile("input.txt");
-// const text = await Deno.readTextFile("sample.txt");
+// const text = await Deno.readTextFile("input.txt");
+const text = await Deno.readTextFile("sample.txt");
 
 type Direction = "N" | "E" | "S" | "W";
 
