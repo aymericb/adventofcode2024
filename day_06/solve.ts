@@ -1,9 +1,12 @@
 const text = await Deno.readTextFile("input.txt");
 // const text = await Deno.readTextFile("sample.txt");
 
+type Direction = "N" | "E" | "S" | "W";
+
 type Node = {
     visited: boolean;
     obstacle: boolean;
+    direction: Direction | null;  // No point having visited as well, but too lazy to refactor
 }
 
 type Guard = {
@@ -42,9 +45,19 @@ function parseData(text: string): [Node[][], Guard] {
     throw new Error("No guard found");
 }
 
-const [grid, guard] = parseData(text);
+function cloneGrid(grid: Node[][]): Node[][] {
+    return grid.map(row => row.map(n => ({ ...n })));
+}
 
-function move(): boolean {
+const [startGrid, startGuard] = parseData(text);
+
+enum ExitResult {
+    Progress,
+    Exit,
+    InfiniteLoop
+}
+
+function move(guard: Guard, grid: Node[][]): ExitResult {
     if (guard.direction === "N") {
         guard.row--;
     } else if (guard.direction === "E") {
@@ -54,12 +67,16 @@ function move(): boolean {
     } else if (guard.direction === "W") {
         guard.col--;
     }
-    const [row, col] = [guard.row, guard.col];
+    const [row, col, direction] = [guard.row, guard.col, guard.direction];
     const node = grid[row]?.[col];
-    console.log(guard, node);
+    // console.log(guard, node);
     if (node === undefined) {
-        return false;
+        return ExitResult.Exit;
     }
+    if (node.visited && node.direction === direction) {
+        return ExitResult.InfiniteLoop;
+    }
+
     if (node.obstacle) {
         let newDirection = guard.direction;
         if (guard.direction === "N") {
@@ -76,33 +93,63 @@ function move(): boolean {
             newDirection = "N";
         }
         guard.direction = newDirection;
-        return move();
+        return move(guard, grid);
     }
     grid[row][col].visited = true;
-    return true;
+    grid[row][col].direction = direction;
+    return ExitResult.Progress;
 }
 
-while (move()) { 
+const part1Grid = cloneGrid(startGrid);
+const part1Guard = { ...startGuard };
+
+while (move(part1Guard, part1Grid) === ExitResult.Progress) { 
     // do nothing
 }
 
-grid.forEach(row => {
-    const line = row.map(n => {
-        if (n.visited) {
-            if (n.obstacle) {
-                return "O";
+function printGrid(grid: Node[][]) {
+    grid.forEach(row => {
+        const line = row.map(n => {
+            if (n.visited) {
+                if (n.obstacle) {
+                    return "O";
+                }
+                return "X"; 
+            } else if (n.obstacle) {
+                return "#";
             }
-            return "X";
-        } else if (n.obstacle) {
-            return "#";
-        }
-        return ".";
-    }).join("");
-    console.log(line);
-});
+            return ".";
+        }).join("");
+        console.log(line);
+    });
+}
 
-const sum = grid.reduce((acc, row) => {
+printGrid(part1Grid);
+const sum = part1Grid.reduce((acc, row) => {
     return acc + row.filter(n => n.visited).length;
 }, 0);
 
 console.log("Part 1:", sum);
+
+// Part 2 
+// Let's brute force it and not think too much about complexity 😱
+// (and it is indeed quite slow 🐌 🤷 )
+let count = 0;
+for (let row = 0; row < startGrid.length; row++) {
+    for (let col = 0; col < startGrid[row].length; col++) {
+        if (col === startGuard.col && row === startGuard.row) {
+            continue;
+        }
+        let status = ExitResult.Progress;
+        const guard = { ...startGuard };
+        const grid = startGrid.map(r => r.map(n => ({ ...n })));
+        grid[row][col].obstacle = true;
+        while (status === ExitResult.Progress) {
+            status = move(guard, grid);
+        }
+        if (status === ExitResult.InfiniteLoop) {
+            count++;
+        }
+    }
+}
+console.log("Part 2:", count);
