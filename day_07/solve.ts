@@ -13,8 +13,7 @@ function parseData(text: string): Equation[] {
     });
 }
 
-function solveEquation(equation: Equation, acc: number, pos: number): boolean {
-
+function solve(equation: Equation, acc: number, pos: number, operators: Array<(a: number, b: number) => number>): boolean {
     // Branch terminations
     if (acc > equation.result) {
         return false;
@@ -25,33 +24,25 @@ function solveEquation(equation: Equation, acc: number, pos: number): boolean {
 
     // Recursive calls
     const operand = equation.operands[pos];
-    return solveEquation(equation, acc + operand, pos + 1) || solveEquation(equation, acc * operand, pos + 1);
+    for (const op of operators) {
+        if (solve(equation, op(acc, operand), pos + 1, operators)) {
+            return true;
+        }
+    }
+    return false;
 }
 
+const add = (a: number, b: number) => a + b;
+const mul = (a: number, b: number) => a * b;
+const concat = (a: number, b: number) => (a * Math.pow(10, Math.floor(Math.log10(b)) + 1)) + b;
+
 const part1 = parseData(text)
-    .filter(equation => solveEquation(equation, 0, 0))
+    .filter(equation => solve(equation, 0, 0, [add, mul]))
     .reduce((acc, equation) => acc + equation.result, 0);
 console.log("Part 1:", part1);
 
 
-function solveEquation2(equation: Equation, acc: number, pos: number): boolean {
-
-    // Branch terminations
-    if (acc > equation.result) {
-        return false;
-    }
-    if (equation.operands.length === pos) {
-        return acc === equation.result;
-    }
-
-    // Recursive calls
-    const operand = equation.operands[pos];
-    return solveEquation2(equation, acc + operand, pos + 1)
-        || solveEquation2(equation, acc * operand, pos + 1)
-        || solveEquation2(equation, (acc * Math.pow(10, Math.floor(Math.log10(operand)) + 1)) + operand, pos + 1);
-}
-
 const part2 = parseData(text)
-    .filter(equation => solveEquation2(equation, 0, 0))
+    .filter(equation => solve(equation, 0, 0, [add, mul, concat]))
     .reduce((acc, equation) => acc + equation.result, 0);
 console.log("Part 2:", part2);
