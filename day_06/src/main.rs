@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+
 #[derive(Clone, Copy, PartialEq)]
 enum Direction {
     N,
@@ -134,6 +136,7 @@ fn part1(guard: &Guard, grid: &Grid) -> (usize, Grid) {
 }
 
 // Very slow, but it works
+#[allow(dead_code)]
 fn part2(guard: &Guard, grid: &Grid, part1_grid: &Grid) -> usize {
     let mut count = 0;
     for row in 0..grid.height {
@@ -155,6 +158,24 @@ fn part2(guard: &Guard, grid: &Grid, part1_grid: &Grid) -> usize {
     count
 }
 
+#[allow(dead_code)]
+fn part2_multithreaded(guard: &Guard, grid: &Grid, part1_grid: &Grid) -> usize {
+    (0..grid.height).into_par_iter()
+        .flat_map(|row| (0..grid.width).into_par_iter().map(move |col| (row, col)))
+        .filter(|&(row, col)| row != guard.row || col != guard.col || part1_grid.nodes[row][col].direction.is_none())    
+        .map(|(row, col)| {
+            let mut grid = grid.clone();
+            grid.nodes[row][col].obstacle = true;
+            let mut guard = guard.clone();
+            let mut status = ExitResult::Progress;
+            while status == ExitResult::Progress {
+                status = move_guard(&mut guard, &mut grid);
+            }
+            if status == ExitResult::InfiniteLoop { 1 } else { 0 }
+        })
+        .sum()
+}
+
 fn main() {
     let data = std::fs::read_to_string("input.txt").unwrap();
     // let data = std::fs::read_to_string("sample.txt").unwrap();
@@ -163,4 +184,7 @@ fn main() {
     let (part1_result, part1_grid) = part1(&guard, &grid);
     println!("Part 1: {}", part1_result);
     println!("Part 2: {}", part2(&guard, &grid, &part1_grid));
+
+    // The irony, this is slower!
+    // println!("Part 2: {}", part2_multithreaded(&guard, &grid, &part1_grid));
 }
