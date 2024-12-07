@@ -48,7 +48,7 @@ function solveEquation2(equation: Equation, acc: number, pos: number): boolean {
     const operand = equation.operands[pos];
     return solveEquation2(equation, acc + operand, pos + 1)
         || solveEquation2(equation, acc * operand, pos + 1)
-        || solveEquation2(equation, Number(acc.toString() + operand.toString()), pos + 1);
+        || solveEquation2(equation, (acc * Math.pow(10, Math.floor(Math.log10(operand)) + 1)) + operand, pos + 1);
 }
 
 const part2 = parseData(text)
