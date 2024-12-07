@@ -126,19 +126,20 @@ fn move_guard(guard: &mut Guard, grid: &mut Grid) -> ExitResult {
     ExitResult::Progress
 }
 
-fn part1(guard: &Guard, grid: &Grid) -> usize {
+fn part1(guard: &Guard, grid: &Grid) -> (usize, Grid) {
     let mut grid = grid.clone();
     let mut guard = guard.clone();
     while move_guard(&mut guard, &mut grid) == ExitResult::Progress {}
-    grid.nodes.iter().map(|row| row.iter().filter(|n| n.direction.is_some()).count()).sum::<usize>()
+    (grid.nodes.iter().map(|row| row.iter().filter(|n| n.direction.is_some()).count()).sum::<usize>(), grid)
 }
 
 // Very slow, but it works
-fn part2(guard: &Guard, grid: &Grid) -> usize {
+fn part2(guard: &Guard, grid: &Grid, part1_grid: &Grid) -> usize {
     let mut count = 0;
     for row in 0..grid.height {
         for col in 0..grid.width {
             if row == guard.row && col == guard.col { continue; }
+            if part1_grid.nodes[row][col].direction.is_none() { continue; }
             let mut grid = grid.clone();
             grid.nodes[row][col].obstacle = true;
             let mut guard = guard.clone();
@@ -159,6 +160,7 @@ fn main() {
     // let data = std::fs::read_to_string("sample.txt").unwrap();
     
     let (grid, guard) = parse_data(&data);
-    println!("Part 1: {}", part1(&guard, &grid));
-    println!("Part 2: {}", part2(&guard, &grid));
+    let (part1_result, part1_grid) = part1(&guard, &grid);
+    println!("Part 1: {}", part1_result);
+    println!("Part 2: {}", part2(&guard, &grid, &part1_grid));
 }

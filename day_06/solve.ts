@@ -140,6 +140,9 @@ for (let row = 0; row < startGrid.length; row++) {
         if (col === startGuard.col && row === startGuard.row) {
             continue;
         }
+        if (!part1Grid[row][col].visited) {
+            continue;
+        }
         let status = ExitResult.Progress;
         const guard = { ...startGuard };
         const grid = startGrid.map(r => r.map(n => ({ ...n })));
