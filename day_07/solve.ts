@@ -33,3 +33,25 @@ const part1 = parseData(text)
     .reduce((acc, equation) => acc + equation.result, 0);
 console.log("Part 1:", part1);
 
+
+function solveEquation2(equation: Equation, acc: number, pos: number): boolean {
+
+    // Branch terminations
+    if (acc > equation.result) {
+        return false;
+    }
+    if (equation.operands.length === pos) {
+        return acc === equation.result;
+    }
+
+    // Recursive calls
+    const operand = equation.operands[pos];
+    return solveEquation2(equation, acc + operand, pos + 1)
+        || solveEquation2(equation, acc * operand, pos + 1)
+        || solveEquation2(equation, Number(acc.toString() + operand.toString()), pos + 1);
+}
+
+const part2 = parseData(text)
+    .filter(equation => solveEquation2(equation, 0, 0))
+    .reduce((acc, equation) => acc + equation.result, 0);
+console.log("Part 2:", part2);
