@@ -47,6 +47,7 @@ function findFrequencies(data: Node[][]): Map<string, [number, number][]> {
     return frequencies;
 }
 
+
 function markAnti(positions: [number, number][]) {
     const width = data[0].length;
     const height = data.length;
@@ -73,7 +74,7 @@ function markAnti(positions: [number, number][]) {
 }
 
 const frequencies = findFrequencies(data);
-console.log(frequencies);
+// console.log(frequencies);
 
 for (const key of frequencies.keys()) {
     markAnti(frequencies.get(key) || []);
@@ -82,3 +83,47 @@ for (const key of frequencies.keys()) {
 const part1 = data.flat().filter(x => x.anti).length;
 console.log("Part1", part1);
 
+function markAntiPart2(positions: [number, number][]) {
+    const width = data[0].length;
+    const height = data.length;
+
+    for (let i = 0; i < positions.length; i++) {
+        for (let j = i + 1; j < positions.length; j++) {
+            const [x1, y1] = positions[i];
+            const [x2, y2] = positions[j];
+
+            let [dx1, dy1] = [x1 - x2, y1 - y2];
+            let [dx2, dy2] = [x2 - x1, y2 - y1];
+
+            const [ox1, oy1] = [dx1, dy1];
+            const [ox2, oy2] = [dx2, dy2];
+
+            
+            let found = false;
+            do {
+                found = false;
+                const [xa1, ya1] = [x1 + dx1, y1 + dy1];
+                const [xa2, ya2] = [x2 + dx2, y2 + dy2];
+
+                if (xa1 >= 0 && xa1 < width && ya1 >= 0 && ya1 < height) {
+                    data[xa1][ya1].anti = true;
+                    found = true;
+                }
+                if (xa2 >= 0 && xa2 < width && ya2 >= 0 && ya2 < height) {
+                    data[xa2][ya2].anti = true;
+                    found = true;
+                }
+                [dx1, dy1] = [dx1 + ox1, dy1 + oy1];
+                [dx2, dy2] = [dx2 + ox2, dy2 + oy2];
+                // console.log([xa1, ya1], [xa2, ya2], found);
+            } while (found);
+        }
+    }
+}
+
+for (const key of frequencies.keys()) {
+    markAntiPart2(frequencies.get(key) || []);
+}
+const part2 = data.flat().filter(x => x.anti || x.freq).length;
+console.log("Part2", part2);
+// printGrid(data);
