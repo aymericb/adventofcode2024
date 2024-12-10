@@ -28,21 +28,28 @@ function walk(row: number, col: number, data: number[][], start: number, acc: [n
             ...walk(row, col + 1, data, start + 1, acc)];
 }
 
-function walkSum(row: number, col: number, data: number[][]): number {
+function walkSum(row: number, col: number, data: number[][]): [number, number] {
     const result = walk(row, col, data, 0, []);
     const uniqueResults = result.filter((item, index) => {
         return result.findIndex(other => other[0] === item[0] && other[1] === item[1]) === index;
     });
-    return uniqueResults.length;
+    const ratings = uniqueResults.map(item => {
+        return result.filter(other => other[0] === item[0] && other[1] === item[1]).length;
+    });
+    const rating = ratings.reduce((acc, rating) => acc + rating, 0);
+    return [uniqueResults.length,  rating];    
 }
 
-let sum = 0;
+let score = 0;
+let rating = 0;
 for (let i=0; i<data.length; i++) {
     for (let j=0; j<data[i].length; j++) {
-        sum += walkSum(i, j, data);
+        const [walk_sum, walk_rating] = walkSum(i, j, data);
+        score += walk_sum;
+        rating += walk_rating;
     }
 }
 
-console.log("Part 1:", sum);
-
+console.log("Part 1:", score);
+console.log("Part 2:", rating);
 // console.log(walkSum(0, 2, data, 0));
