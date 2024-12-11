@@ -19,34 +19,35 @@ fn blink(stone: u64, depth: u32, digits: usize) -> u64 {
     }
 
     if digits % 2 == 0 {
-        let mut divisor = 10u64.pow((digits / 2) as u32);
+        let half_digits = digits / 2;
+        let divisor = 10u64.pow(half_digits as u32);
         let left = stone / divisor;
         let right = stone % divisor;
-
-        let mut right_digits = digits / 2;
-        if right < divisor {
-            let mut count = 0;
-            while right < divisor {     
-                count += 1;
-                divisor /= 10;
+        
+        // Count right digits using division (faster than log)
+        let mut right_digits = half_digits;
+        if right < divisor / 10 {
+            let mut temp = right;
+            right_digits = 1;
+            while temp >= 10 {
+                temp /= 10;
+                right_digits += 1;
             }
-            right_digits = right_digits + 1 - count;
-            // println!("stone: {}, right: {}, divisor: {}, digits: {}, right_digits: {}", stone, right, divisor, digits, right_digits);
         }
 
-        return blink(left, depth - 1, digits / 2) 
-             + blink(right, depth - 1, right_digits);
+        blink(left, depth - 1, half_digits) 
+        + blink(right, depth - 1, right_digits)
     } else {
-        let mut digits = digits;
-        let divisor = 10u64.pow(digits as u32);
         let new_stone = stone * 2024;
-        let mut temp = new_stone / divisor;
-        while temp > 0 {
+        // Count digits using division
+        let mut new_digits = 1;
+        let mut temp = new_stone;
+        while temp >= 10 {
             temp /= 10;
-            digits += 1;
+            new_digits += 1;
         }
 
-        return blink(new_stone, depth - 1, digits);
+        blink(new_stone, depth - 1, new_digits)
     }
 }
 
