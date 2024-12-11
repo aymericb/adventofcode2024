@@ -1,13 +1,68 @@
 use dashmap::DashMap;
-use std::collections::HashMap;
 use rayon::prelude::*;
 use std::fs;
+
+const POWERS_OF_10: [u64; 20] = [
+    1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000,
+    10000000000, 100000000000, 1000000000000, 10000000000000, 100000000000000,
+    1000000000000000, 10000000000000000, 100000000000000000, 1000000000000000000,
+    10000000000000000000,
+];
+
 
 fn load_data(file_path: &str) -> Vec<u64> {
     let text = fs::read_to_string(file_path).expect("Failed to read file");
     text.lines()
         .flat_map(|line| line.split_whitespace().map(|num| num.parse::<u64>().expect("Failed to parse number")))
         .collect()
+}
+
+fn blink2(stone: u64, depth: u32, digits: usize) -> u64 {
+    if depth == 0 {
+        return 1;
+    }
+    if stone == 0 {
+        return blink2(1, depth - 1, 1);
+    }
+
+    if (digits & 1) == 0 {  // Faster even check
+        let half_digits = digits >> 1;  // Faster division by 2
+        let divisor = POWERS_OF_10[half_digits];
+        let left = stone / divisor;
+        let right = stone % divisor;
+        
+        // Optimize right_digits calculation
+        let right_digits = if right < divisor / 10 {
+            let mut temp = right;
+            let mut count = 1;
+            while temp >= 10 {
+                temp /= 10;
+                count += 1;
+            }
+            count
+        } else {
+            half_digits
+        };
+
+        blink2(left, depth - 1, half_digits) 
+        + blink2(right, depth - 1, right_digits)
+    } else {
+        let new_stone = stone * 2024;
+        // Use log10 for larger numbers, division for smaller ones
+        let new_digits = if new_stone < 1_000_000 {
+            let mut temp = new_stone;
+            let mut count = 1;
+            while temp >= 10 {
+                temp /= 10;
+                count += 1;
+            }
+            count
+        } else {
+            (new_stone as f64).log10().floor() as usize + 1
+        };
+
+        blink2(new_stone, depth - 1, new_digits)
+    }
 }
 
 fn blink(stone: u64, depth: u32, digits: usize) -> u64 {
@@ -64,17 +119,17 @@ fn blink(stone: u64, depth: u32, digits: usize) -> u64 {
 //     result
 // }
 
-// #[allow(dead_code)]
-// fn blink_memo_dashmap(stone: u64, depth: u32, digits: Option<usize>, memo: &DashMap<(u64, u32), u64>) -> u64 {
-//     let key = (stone, depth);
-//     if let Some(result) = memo.get(&key) {
-//         return *result;
-//     }
+#[allow(dead_code)]
+fn blink_memo_dashmap(stone: u64, depth: u32, digits: usize, memo: &DashMap<(u64, u32), u64>) -> u64 {
+    let key = (stone, depth);
+    if let Some(result) = memo.get(&key) {
+        return *result;
+    }
     
-//     let result = blink(stone, depth, digits);
-//     memo.insert(key, result);
-//     result
-// }
+    let result = blink(stone, depth, digits);
+    memo.insert(key, result);
+    result
+}
 
 
 // #[allow(dead_code)]
@@ -84,13 +139,13 @@ fn blink(stone: u64, depth: u32, digits: usize) -> u64 {
 //         .sum()
 // }
 
-// #[allow(dead_code)]
-// fn blink_all_rayon_memo(stones: &[u64], depth: u32) -> u64 {
-//     let memo = DashMap::new();
-//     stones.par_iter()
-//         .map(|&stone| blink_memo_dashmap(stone, depth, None, &memo))
-//         .sum()
-// }
+#[allow(dead_code)]
+fn blink_all_rayon_memo(stones: &[u64], depth: u32) -> u64 {
+    let memo = DashMap::new();
+    stones.par_iter()
+        .map(|&stone| blink_memo_dashmap(stone, depth, get_digits(stone), &memo))
+        .sum()
+}
 
 fn get_digits(stone: u64) -> usize {
     if stone == 0 { return 1; }
@@ -101,6 +156,13 @@ fn get_digits(stone: u64) -> usize {
 fn blink_all_rayon(stones: &[u64], depth: u32) -> u64 {
     stones.par_iter()
         .map(|&stone| blink(stone, depth, get_digits(stone)))
+        .sum()
+}
+
+#[allow(dead_code)]
+fn blink2_all_rayon(stones: &[u64], depth: u32) -> u64 {
+    stones.par_iter()
+        .map(|&stone| blink2(stone, depth, get_digits(stone)))
         .sum()
 }
 
@@ -158,9 +220,16 @@ fn main() {
     // Part 1: 25 = 185894
 
     measure_time(|| blink_all_rayon(&data, 25), "blink_all_rayon 25");
-    measure_time(|| blink_all_rayon(&data, 47), "blink_all_rayon 47");
-    measure_time(|| blink_all_rayon(&data, 48), "blink_all_rayon 48");
+    measure_time(|| blink_all_rayon(&data, 25), "blink_all_rayon 25");
+    // measure_time(|| blink_all_rayon(&data, 47), "blink_all_rayon 47");
+    // measure_time(|| blink_all_rayon(&data, 48), "blink_all_rayon 48");
     measure_time(|| blink_all_rayon(&data, 49), "blink_all_rayon 49");
+    measure_time(|| blink2_all_rayon(&data, 49), "blink2_all_rayon 49");
+    // measure_time(|| blink_all_rayon_memo(&data, 49), "blink_memo_dashmap 49");
+    // measure_time(|| blink_all_rayon(&data, 51), "blink_all_rayon 51");
+    // measure_time(|| blink_all_rayon_memo(&data, 51), "blink_memo_dashmap 51");    
+    // measure_time(|| blink_all_rayon(&data, 50), "blink_all_rayon 50");
+    // measure_time(|| blink_all_rayon(&data, 51), "blink_all_rayon 51");
     // measure_time(|| blink_all_rayon_memo(&data, 47), "blink_all_rayon_memo 47");
 
     // measure_time(|| blink_all(&data, 48), "blink_all 48");
