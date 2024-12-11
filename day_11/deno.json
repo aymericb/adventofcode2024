@@ -1,6 +1,5 @@
 {
     "tasks": {
-        "solve": "deno run --allow-read solve.ts",
-        "solve2": "deno run --allow-read solve2.ts"
+        "solve": "deno run --v8-flags=--max-old-space-size=32768 --allow-read solve.ts"
     }
 }
