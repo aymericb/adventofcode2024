@@ -9,40 +9,213 @@ function parseData(text: string): number[] {
 const data = parseData(text);
 // console.log(data);
 
-const BigIntZero = BigInt(0);
-const BigIntOne = BigInt(1);
-const BigInt2024 = BigInt(2024);
-
-function blink(stone: bigint, depth: number): bigint {
+function blink(stone: bigint, depth: number, digits?: number): bigint {
     if (depth === 0) {
-        return BigIntOne;
+        return 1n;
     }    
-    if (stone === BigIntZero) {
-        return blink(BigIntOne, depth - 1);
+    if (stone === 0n) {
+        return blink(1n, depth - 1);
+    }
+
+    
+    if (!digits) {
+        digits = stone.toString().length;
+    }
+    // Check if digits are correct
+    // if (digits !== stone.toString().length) {
+    //     console.log("Debug:", stone, digits, stone.toString().length, depth);
+    //     throw new Error("Debug");
+    // }
+
+    if (digits % 2 === 0) {
+        // For even number of digits, split in half using division/modulo
+        let divisor = 10n ** (BigInt(digits) / 2n);
+        const left = stone / divisor;
+        const right = stone % divisor;
+
+        let rightDigits = digits / 2;
+        if (right < divisor) {
+            while (right < divisor) {
+                // console.log("rightDigits:", digits, rightDigits, stone, right, divisor);
+                rightDigits--;
+                divisor /= 10n;
+            }
+            rightDigits++;
+        }
+
+        return blink(left, depth - 1, digits / 2) 
+             + blink(right, depth - 1, rightDigits);
+    } else {
+        const divisor = 10n ** BigInt(digits);
+        const newStone = stone * 2024n;
+        let temp = newStone / divisor;
+        while (temp > 0n) {
+            temp /= 10n;
+            digits++;
+        }
+
+        return blink(newStone, depth - 1, digits);
+    }
+}
+
+function blinkStr(stone: bigint, depth: number): bigint {
+    if (depth === 0) {
+        return 1n;
+    }    
+    if (stone === 0n) {
+        return blinkStr(1n, depth - 1);
     }
 
     const str_stone = stone.toString();
     if (str_stone.length % 2 === 0) {
         const left = BigInt(str_stone.slice(0, str_stone.length / 2));
         const right = BigInt(str_stone.slice(str_stone.length / 2));
-        return blink(left, depth - 1) + blink(right, depth - 1);
+        return blinkStr(left, depth - 1) + blinkStr(right, depth - 1);
     } else {
-        return blink(stone * BigInt2024, depth - 1);
+        return blinkStr(stone * 2024n, depth - 1);
     }
 }
 
+
 function blinkAll(stones: number[], depth: number): bigint {
     const bigStones = stones.map(stone => BigInt(stone));
-    let tally = BigIntZero;
+    let tally = 0n;
     for (let i = 0; i < bigStones.length; i++) {
+        // console.log("Debug:", bigStones[i], depth);
         tally += blink(bigStones[i], depth);
     }
     return tally;
 }
 
+function blinkAllStr(stones: number[], depth: number): bigint {
+    const bigStones = stones.map(stone => BigInt(stone));
+    let tally = 0n;
+    for (let i = 0; i < bigStones.length; i++) {
+        // console.log("Debug:", bigStones[i], depth);
+        tally += blinkStr(bigStones[i], depth);
+    }
+    return tally;
+}
+
+function createWorker(stone: bigint, depth: number) {
+    const workerCode = `
+        // Copy your blinkStr and related functions/constants here
+        const BigIntZero = BigInt(0);
+        const BigIntOne = BigInt(1);
+        const BigInt2024 = BigInt(2024);
+
+        ${blink.toString()}
+
+        self.onmessage = (e) => {
+            const { stone, depth } = e.data;
+            const result = blink(stone, depth);
+            self.postMessage(result);
+        };
+    `;
+
+    return new Worker(`data:application/javascript;charset=utf-8,${encodeURIComponent(workerCode)}`, { type: "module" });
+}
+
+
+function blinkArray(stone: number): number[] {
+    if (stone === 0) {
+        return [1];
+    }
+    
+    // Get number of digits
+    const numDigits = Math.floor(Math.log10(stone)) + 1;    
+    if (numDigits % 2 === 0) {
+        const divisor = 10 ** (numDigits / 2);
+        const right = stone % divisor;
+        const left = Math.floor(stone / divisor);
+        return [left, right];
+    }
+    return [2024 * stone];
+}
+
+function blinkAllArray(stones: number[]): number[] {
+    return stones.map(stone => blinkArray(stone)).flat();
+}
+
+// Part 1: 185894
+
+console.log("Part 1:", data.length);
+
+async function blinkAllParallel(stones: number[], depth: number): Promise<bigint> {
+    const BATCH_SIZE = navigator.hardwareConcurrency || 4; // Use available CPU cores
+    let tally = 0n;
+    const bigStones = stones.map(stone => BigInt(stone));
+    
+    // Process stones in batches
+    for (let i = 0; i < bigStones.length; i += BATCH_SIZE) {
+        const batch = bigStones.slice(i, i + BATCH_SIZE);
+        const workers = batch.map(stone => {
+            const worker = createWorker(stone, depth);
+            worker.postMessage({ stone, depth });
+            return worker;
+        });
+
+        const results = await Promise.all(
+            workers.map(worker => 
+                new Promise<bigint>((resolve) => {
+                    worker.onmessage = (e) => {
+                        worker.terminate();
+                        resolve(e.data);
+                    };
+                })
+            )
+        );
+
+        tally += results.reduce((sum, val) => sum + val, 0n);
+    }
+    
+    return tally;
+}
+
+async function blinkAllParallelRoundArray(stones: number[], depth: number): Promise<bigint> {
+    if (depth <= 5) {
+        return blinkAllParallel(stones, depth);
+    }
+
+    for (let i=0; i<5; i++) {
+        stones = blinkAllArray(stones);
+    }    
+    return blinkAllParallel(stones, depth - 5);
+}
+
+
+
+function measureTime(fn: () => bigint, label: string = "Operation"): bigint {
+    const start = performance.now();
+    const result = fn();
+    const end = performance.now();
+    console.log(`${label}:`, result);
+    console.log(`Time taken for ${label}:`, end - start, "milliseconds");
+    return result;
+}
+
+async function measureTimeAsync(fn: () => Promise<bigint>, label: string = "Operation"): Promise<bigint> {
+    const start = performance.now();
+    const result = await fn();
+    const end = performance.now();
+    console.log(`${label}:`, result);
+    console.log(`Time taken for ${label}:`, end - start, "milliseconds");
+    return result;
+}
+
+
+
 console.log("Debug:", blinkAll([125, 17], 6));
 
 // Part 1: 185894
 console.log("Part 1:", blinkAll(data, 25));
-console.log("50", blinkAll(data, 50));
+
+measureTime(() => blinkAll(data, 36), "blnkall 36");
+measureTime(() => blinkAllStr(data, 36), "blnkall str 36");
+// await measureTimeAsync(() => blinkAllParallel(data, 46), "blnkall parallel 46");
+// await measureTimeAsync(() => blinkAllParallelRoundArray(data, 46), "blnkall parallel round 46");
+
+// console.log("40", blinkAll(data, 40));
+
+
 // console.log("Part 2:", blinkAll(data, 75));
