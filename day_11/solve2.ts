@@ -146,7 +146,7 @@ function blinkAllArray(stones: number[]): number[] {
 
 // Part 1: 185894
 
-console.log("Part 1:", data.length);
+// console.log("Part 1:", data.length);
 
 async function blinkAllParallel(stones: number[], depth: number): Promise<bigint> {
     const BATCH_SIZE = navigator.hardwareConcurrency || 4; // Use available CPU cores
@@ -223,7 +223,8 @@ function blinkAllMemo(stones: number[], depth: number): bigint {
 
 
 
-console.log("Debug:", blinkAll([125, 17], 6));
+// console.log("Debug:", blinkAll([125, 17], 6));
+// console.log("Debug:", data[0], blink(BigInt(data[0]), 4));
 
 // Part 1: 185894
 console.log("Part 1:", blinkAll(data, 25));
@@ -233,7 +234,7 @@ console.log("Part 1:", blinkAll(data, 25));
 // measureTime(() => blinkAllStr(data, 36), "blnkall str 36");
 // await measureTimeAsync(() => blinkAllParallel(data, 36), "blnkall memo 36");
 // 1.5x factor
-await measureTimeAsync(() => blinkAllParallelRoundArray(data, 45), "blnkall parallel round 45");
+// await measureTimeAsync(() => blinkAllParallelRoundArray(data, 40), "blnkall parallel round 40");
 // await measureTimeAsync(() => blinkAllParallelRoundArray(data, 46), "blnkall parallel round 46");
 // await measureTimeAsync(() => blinkAllParallelRoundArray(data, 47), "blnkall parallel round 47");
 
