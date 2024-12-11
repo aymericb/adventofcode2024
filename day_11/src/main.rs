@@ -90,12 +90,8 @@ fn blink_all(stones: &[u64], depth: u32) -> u64 {
 #[allow(dead_code)]
 fn blink_all_rayon_memo(stones: &[u64], depth: u32) -> u64 {
     let memo = DashMap::new();
-    stones.par_chunks(100)  // or some other chunk size
-        .map(|chunk| {
-            chunk.iter()
-                .map(|&stone| blink_memo_dashmap(stone, depth, None, &memo))
-                .sum::<u64>()
-        })
+    stones.par_iter()
+        .map(|&stone| blink_memo_dashmap(stone, depth, None, &memo))
         .sum()
 }
 
@@ -112,6 +108,19 @@ fn blink_all_memo(stones: &[u64], depth: u32) -> u64 {
     stones.iter()
         .map(|&stone| blink_memo(stone, depth, None, &mut memo))
         .sum()
+}
+
+fn measure_time<F, T>(f: F, label: &str) -> T 
+where
+    F: FnOnce() -> T,
+    T: std::fmt::Display,
+{
+    let start = std::time::Instant::now();
+    let result = f();
+    let duration = start.elapsed();
+    println!("{}: {}", label, result);
+    println!("Time taken for {}: {:?}", label, duration);
+    result
 }
 
 fn main() {
@@ -141,6 +150,17 @@ fn main() {
     // println!("Part 2: {}", blink_all(&data, 75));
 
     // println!("Part 2: {}", blink_all_rayon(&data, 43));
-    println!("Part 2: {}", blink_all_rayon(&data, 47));
+    // println!("Part 2: {}", blink_all_rayon(&data, 47));
+    // measure_time(|| blink_all(&data, 47), "blink_all 47");
+    measure_time(|| blink_all_rayon(&data, 47), "blink_all_rayon 47");
+    measure_time(|| blink_all_rayon(&data, 48), "blink_all_rayon 48");
+    measure_time(|| blink_all_rayon(&data, 49), "blink_all_rayon 49");
+    // measure_time(|| blink_all_rayon_memo(&data, 47), "blink_all_rayon_memo 47");
+
+    // measure_time(|| blink_all(&data, 48), "blink_all 48");
+    // measure_time(|| blink_all_rayon(&data, 48), "blink_all_rayon 48");
+    // measure_time(|| blink_all(&data, 49), "blink_all 49");
+    // measure_time(|| blink_all_rayon(&data, 49), "blink_all_rayon 49");
+
 }
 
