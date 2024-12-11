@@ -138,7 +138,7 @@ fn blink_memo_dashmap(stone: u64, depth: u32, digits: usize, memo: &DashMap<(u64
         return 1;
     }
     if stone == 0 {
-        return blink(1, depth - 1, 1);
+        return blink_memo_dashmap(1, depth - 1, 1, memo);
     }
 
     let result: u64;
@@ -334,6 +334,7 @@ fn main() {
     // measure_time(|| blink_all_rayon_memo(&data, 50), "blink_memo_dashmap 50");
     measure_time(|| blink_all_rayon_memo(&data, 51), "blink_memo_dashmap 51");
     measure_time(|| blink_all_rayon_memo(&data, 52), "blink_memo_dashmap 52");
+    measure_time(|| blink_all_rayon_memo(&data, 75), "blink_memo_dashmap 75");
 
 
 }
