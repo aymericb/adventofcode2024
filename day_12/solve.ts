@@ -1,5 +1,5 @@
-// const text = await Deno.readTextFile("input.txt");
-const text = await Deno.readTextFile("sample.txt");
+const text = await Deno.readTextFile("input.txt");
+// const text = await Deno.readTextFile("sample.txt");
 
 function measure<T>(fn: () => T, label: string): T {
     const start = performance.now();
@@ -64,38 +64,38 @@ function computeSideInternal(coords: [number, number][], moves: [number, number]
     let sides = 0;
     while (remainingCoords.length > 0) {
         const [row, col] = remainingCoords.pop()!;
-        console.log(row, col, inside(coords, [row + check[0], col + check[1]]));
+        // console.log(row, col, inside(coords, [row + check[0], col + check[1]]));
 
         if (inside(coords, [row + check[0], col + check[1]])) {
             continue;
         }
-        console.log("coords", coords);
+        // console.log("coords", coords);
 
         sides += 1;
         for (const move of moves) {
             let moveCoord: [number, number] = [row + move[0], col + move[1]];
-            while (inside(remainingCoords, moveCoord)) {
+            while (inside(remainingCoords, moveCoord) && !inside(coords, [moveCoord[0] + check[0], moveCoord[1] + check[1]])) {
                 // console.log("move", moveCoord);
                 remainingCoords = remove(remainingCoords, moveCoord);
                 moveCoord = [moveCoord[0] + move[0], moveCoord[1] + move[1]];
             }
-            console.log("move stop");
+            // console.log("move stop");
         }
-        console.log("sides", sides);
+        // console.log("sides", sides);
     }    
 
-    console.log(sides);
+    // console.log(sides);
     return sides;
 }
 
 function computeSide(coords: [number, number][]): number {
     // console.log(coords);
-    return computeSideInternal(coords, [[0, 1], [0, -1]], [1, 0]);
+    // return computeSideInternal(coords, [[0, 1], [0, -1]], [1, 0]);
 
-    // return computeSideInternal(coords, [[0, 1], [0, -1]], [-1, 0]) +    // up
-    //        computeSideInternal(coords, [[0, 1], [0, -1]], [1, 0]) +      // down
-    //        computeSideInternal(coords, [[1, 0], [-1, 0]], [0, -1]) +     // left
-    //        computeSideInternal(coords, [[1, 0], [-1, 0]], [0, 1]);         // right
+    return computeSideInternal(coords, [[0, 1], [0, -1]], [-1, 0]) +    // up
+           computeSideInternal(coords, [[0, 1], [0, -1]], [1, 0]) +      // down
+           computeSideInternal(coords, [[1, 0], [-1, 0]], [0, -1]) +     // left
+           computeSideInternal(coords, [[1, 0], [-1, 0]], [0, 1]);         // right
 };
 
 function visitAll(data: string[][], row: number, col: number): [number, number] {
@@ -124,19 +124,19 @@ function visitAll(data: string[][], row: number, col: number): [number, number] 
 
 const data = parseData(text);
 
-// let part1 = 0;
-// let part2 = 0;
-// for (let row = 0; row < data.length; row++) {
-//     for (let col = 0; col < data[row].length; col++) {
-//         const [sum1, sum2] = visitAll(data, row, col);
-//         part1 += sum1;
-//         part2 += sum2;
-//         part2 = Math.max(part2, sum2);
-//     }
-// }
-// console.log("Part1:", part1);
-// console.log("Part2:", part2);
+let part1 = 0;
+let part2 = 0;
+for (let row = 0; row < data.length; row++) {
+    for (let col = 0; col < data[row].length; col++) {
+        const [sum1, sum2] = visitAll(data, row, col);
+        part1 += sum1;
+        part2 += sum2;
+        part2 = Math.max(part2, sum2);
+    }
+}
+console.log("Part1:", part1);
+console.log("Part2:", part2);
 
-console.log(visitAll(data, 0, 6));
-printData(data);
+// console.log(visitAll(data, 0, 6));
+// printData(data);
 
