@@ -122,20 +122,22 @@ function visitAll(data: string[][], row: number, col: number): [number, number] 
     return [tally, newTally];
 }
 
-const data = parseData(text);
 
-let part1 = 0;
-let part2 = 0;
-for (let row = 0; row < data.length; row++) {
+measure(() => {
+    const data = parseData(text);
+    let part1 = 0;
+    let part2 = 0;
+    for (let row = 0; row < data.length; row++) {
     for (let col = 0; col < data[row].length; col++) {
         const [sum1, sum2] = visitAll(data, row, col);
         part1 += sum1;
         part2 += sum2;
         part2 = Math.max(part2, sum2);
+        }
     }
-}
-console.log("Part1:", part1);
-console.log("Part2:", part2);
+    console.log("Part1:", part1);
+    console.log("Part2:", part2);
+}, "Part 1 and 2");
 
 // console.log(visitAll(data, 0, 6));
 // printData(data);
