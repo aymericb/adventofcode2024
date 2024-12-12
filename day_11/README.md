@@ -29,15 +29,15 @@ Time taken for Part 2: 33.04 milliseconds
 
 ## Rust
 
-I did a lot of stupid optimizations which saves a few `ms` at the expensive of legibility. 
+```sh
+time cargo run  --release
+```
 
-- Pass the number of digits around and avoid calling `log10`. 
-- Precomputed powers of 10.  
-- Rayon with `par_iter` with a thread pool of `10` (number of cores on my machine)
+I did a lot of stupid optimizations which saves a few `ms` at the expensive of legibility, which I eventually removed when I discovered the [Memoize](https://docs.rs/memoize/latest/memoize/attr.memoize.html) crate.
 
-I left the optimizations in as they save marginal amounts of time
+The newer code is more legible and more performant. Rayon `par_iter` makes a modest improvement.
 
 ```
-Time taken for Part 1: 379µs
-Time taken for Part 2: 14.630708ms
+Time taken for Part 1: 343.667µs
+Time taken for Part 2: 14.304916ms
 ```
