@@ -1,5 +1,5 @@
-const text = await Deno.readTextFile("input.txt");
-// const text = await Deno.readTextFile("sample.txt");
+// const text = await Deno.readTextFile("input.txt");
+const text = await Deno.readTextFile("sample.txt");
 
 function measure<T>(fn: () => T, label: string): T {
     const start = performance.now();
@@ -48,8 +48,7 @@ function parseData(text: string): Machine[] {
                 machine.prize = [parseInt(match![1]), parseInt(match![2])];
                 state = ParseState.ButtonA;
                 data.push(machine as Machine);
-                machine = {};                machine = {};
-
+                machine = {};
                 break;
             }
         }
@@ -73,6 +72,68 @@ function findFactors(machine: Machine): [number, number][]  {
             // console.log(i, j);
             factors.push([i, j]);
         }
+    }
+
+    return factors;
+}
+
+function findFactors2(machine: Machine): [number, number][]  {
+    let factors: [number, number][] = [];
+
+    const bounds = [
+        Math.ceil(machine.prize[0] / machine.buttonA[0]),
+        Math.floor(machine.prize[0] / machine.buttonB[0]),
+    ];
+    const maxBound = Math.max(...bounds);
+    const lowBound = Math.min(...bounds);
+    
+    console.log(maxBound, lowBound, maxBound - lowBound);
+
+    let percent = 0;
+
+    let i = lowBound;
+    let lastPositiveI = i;
+    // let lastNegativeI = i;
+    let increment = 1;
+
+    for (let k = 0; k < 1000; ++k) {
+
+        // if (i > maxBound) {
+        //     break;
+        // }
+
+        // console.log(i);
+        // const newPercent = Math.floor((i - lowBound) / (maxBound - lowBound) * 100);
+        // if (newPercent > percent) {
+        //     percent = newPercent;
+        //     console.log(percent);
+        // }
+
+        const remainingX = machine.prize[0] - machine.buttonA[0] * i;
+        console.log(i, increment, remainingX, machine.buttonB[0]);
+        if (remainingX < 0 && i > maxBound) {
+            if (i === lastPositiveI || lastPositiveI > maxBound) {
+                break;
+            }
+            i = lastPositiveI + 1;
+            increment = 1;
+            continue;
+        }
+        increment *= 2;
+        lastPositiveI = i;
+        if (remainingX % machine.buttonB[0] !== 0) {
+            i += increment;
+            continue;
+        }
+
+        const j = remainingX / machine.buttonB[0];
+        const total = [i * machine.buttonA[0] + j * machine.buttonB[0], i * machine.buttonA[1] + j * machine.buttonB[1]];
+        if (total[0] === machine.prize[0] && total[1] === machine.prize[1]) {
+            // console.log(i, j);
+            factors.push([i, j]);
+        }
+
+        i += increment;
     }
 
     return factors;
@@ -103,3 +164,15 @@ const data = parseData(text);
 const result = data.map(findFactors).map(findCheapest).filter(solution => solution !== null);
 const sum = result.reduce((acc, solution) => acc + solution.cost, 0);
 console.log("Part 1:", sum);
+
+const DRIFT = 10000000000000;
+const data2: Machine[] = data.map(x => ({
+    buttonA: x.buttonA,
+    buttonB: x.buttonB,
+    prize: [x.prize[0] + DRIFT, x.prize[1] + DRIFT],
+}));
+
+// console.log(data2);
+// console.log(findFactors2(data2[0]));
+console.log(findFactors2(data2[1]));
+// console.log(data2.map(findFactors2));
