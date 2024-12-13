@@ -1,5 +1,5 @@
 // const text = await Deno.readTextFile("input.txt");
-const text = await Deno.readTextFile("sample.txt");
+// const text = await Deno.readTextFile("sample.txt");
 
 function measure<T>(fn: () => T, label: string): T {
     const start = performance.now();
@@ -56,12 +56,15 @@ function parseData(text: string): Machine[] {
     return data;
 }
 
-
-function findFactors(machine: Machine): [number, number][]  {
+function findFactors(machine: Machine): [number, number][] {
     let factors: [number, number][] = [];
 
+    const start = Math.ceil((machine.prize[0] - (machine.prize[1]*machine.buttonB[0]/machine.buttonB[1])) 
+        / (machine.buttonA[0] - (machine.buttonA[1]*machine.buttonB[0]/machine.buttonB[1]))) - 1;
+    const end = start + 2;
+    // console.log(start, end, machine);
 
-    for (let i = 1; i <= 100; ++i) {
+    for (let i = start; i <= end; ++i) {
         const remainingX = machine.prize[0] - machine.buttonA[0] * i;
         if (remainingX < 0 || remainingX % machine.buttonB[0] !== 0) {
             continue;
@@ -69,7 +72,6 @@ function findFactors(machine: Machine): [number, number][]  {
         const j = remainingX / machine.buttonB[0];
         const total = [i * machine.buttonA[0] + j * machine.buttonB[0], i * machine.buttonA[1] + j * machine.buttonB[1]];
         if (total[0] === machine.prize[0] && total[1] === machine.prize[1]) {
-            // console.log(i, j);
             factors.push([i, j]);
         }
     }
@@ -77,102 +79,53 @@ function findFactors(machine: Machine): [number, number][]  {
     return factors;
 }
 
-function findFactors2(machine: Machine): [number, number][]  {
-    let factors: [number, number][] = [];
-
-    const bounds = [
-        Math.ceil(machine.prize[0] / machine.buttonA[0]),
-        Math.floor(machine.prize[0] / machine.buttonB[0]),
-    ];
-    const maxBound = Math.max(...bounds);
-    const lowBound = Math.min(...bounds);
-    
-    console.log(maxBound, lowBound, maxBound - lowBound);
-
-    let percent = 0;
-
-    let i = lowBound;
-    let lastPositiveI = i;
-    // let lastNegativeI = i;
-    let increment = 1;
-
-    for (let k = 0; k < 1000; ++k) {
-
-        // if (i > maxBound) {
-        //     break;
-        // }
-
-        // console.log(i);
-        // const newPercent = Math.floor((i - lowBound) / (maxBound - lowBound) * 100);
-        // if (newPercent > percent) {
-        //     percent = newPercent;
-        //     console.log(percent);
-        // }
-
-        const remainingX = machine.prize[0] - machine.buttonA[0] * i;
-        console.log(i, increment, remainingX, machine.buttonB[0]);
-        if (remainingX < 0 && i > maxBound) {
-            if (i === lastPositiveI || lastPositiveI > maxBound) {
-                break;
-            }
-            i = lastPositiveI + 1;
-            increment = 1;
-            continue;
-        }
-        increment *= 2;
-        lastPositiveI = i;
-        if (remainingX % machine.buttonB[0] !== 0) {
-            i += increment;
-            continue;
-        }
-
-        const j = remainingX / machine.buttonB[0];
-        const total = [i * machine.buttonA[0] + j * machine.buttonB[0], i * machine.buttonA[1] + j * machine.buttonB[1]];
-        if (total[0] === machine.prize[0] && total[1] === machine.prize[1]) {
-            // console.log(i, j);
-            factors.push([i, j]);
-        }
-
-        i += increment;
-    }
-
-    return factors;
-}
 
 type Solution = {
     cost: number;
     factors: [number, number];
 }
 
-function findCheapest(factors: [number,  number][]): Solution | null {
+function computePrice(factors: [number,  number][]): Solution | null {
     if (factors.length === 0) {
         return null;
     }
-    const prices = factors.map(([x, y], index) => ({ cost: x * 3 + y, index }));
-    prices.sort((a, b) => a.cost - b.cost);
+    if (factors.length > 1) {
+        throw new Error("More than one solution found");
+    }
+    const [x, y] = factors[0];
+    const cost = x * 3 + y;
     return {
-        cost: prices[0].cost,
-        factors: factors[prices[0].index],
+        cost,
+        factors: [x, y],
     };
 }
 
+measure(async () => {
+    const text = await Deno.readTextFile("input.txt");
+    const data = parseData(text);
+    // console.log(data);
 
-const data = parseData(text);
-// console.log(data);
+    // console.log(findFactors(data[0]));
+    const result = data
+        .map(findFactors)
+        .map(computePrice)
+        .filter(solution => solution !== null)
+        .filter(solution => solution.factors[0] + solution.factors[1] <= 100);
+    const sum = result.reduce((acc, solution) => acc + solution.cost, 0);
+    console.log("Part 1:", sum);
 
-// console.log(findFactors(data[0]));
-const result = data.map(findFactors).map(findCheapest).filter(solution => solution !== null);
-const sum = result.reduce((acc, solution) => acc + solution.cost, 0);
-console.log("Part 1:", sum);
 
-const DRIFT = 10000000000000;
-const data2: Machine[] = data.map(x => ({
-    buttonA: x.buttonA,
-    buttonB: x.buttonB,
-    prize: [x.prize[0] + DRIFT, x.prize[1] + DRIFT],
-}));
+    const DRIFT = 10000000000000;
+    const data2: Machine[] = data.map(x => ({
+        buttonA: x.buttonA,
+        buttonB: x.buttonB,
+        prize: [x.prize[0] + DRIFT, x.prize[1] + DRIFT],
+    }));
 
-// console.log(data2);
-// console.log(findFactors2(data2[0]));
-console.log(findFactors2(data2[1]));
-// console.log(data2.map(findFactors2));
+    const result2 = data2
+        .map(findFactors)
+        .map(computePrice)
+        .filter(solution => solution !== null);
+    const sum2 = result2.reduce((acc, solution) => acc + solution.cost, 0);
+    console.log("Part 2:", sum2);
+}, "Day 13");

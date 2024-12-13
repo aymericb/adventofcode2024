@@ -19,3 +19,5 @@ No chance being on the leaderboard since I'm asleep when new puzzles are reveale
 - [Day 9](day_09)
 - [Day 10](day_10)
 - [Day 11](day_11)
+- [Day 12](day_12)
+- [Day 13](day_13)
