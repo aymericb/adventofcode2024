@@ -59,8 +59,8 @@ function parseData(text: string): Machine[] {
 function findFactors(machine: Machine): [number, number][] {
     let factors: [number, number][] = [];
 
-    const start = Math.ceil((machine.prize[0] - (machine.prize[1]*machine.buttonB[0]/machine.buttonB[1])) 
-        / (machine.buttonA[0] - (machine.buttonA[1]*machine.buttonB[0]/machine.buttonB[1]))) - 1;
+    const start = Math.floor((machine.prize[0] - (machine.prize[1]*machine.buttonB[0]/machine.buttonB[1])) 
+        / (machine.buttonA[0] - (machine.buttonA[1]*machine.buttonB[0]/machine.buttonB[1])));
     const end = start + 2;
     // console.log(start, end, machine);
 
