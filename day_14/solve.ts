@@ -1,3 +1,5 @@
+import { Image } from "https://deno.land/x/imagescript/mod.ts";
+
 function measure<T>(fn: () => T, label: string): T {
     const start = performance.now();
     const result = fn();
@@ -80,9 +82,9 @@ function countRobots(grid: Grid, [x, y, w, h]: [number, number, number, number])
 function countRobotsNoOverlap(grid: Grid, [x, y, w, h]: [number, number, number, number]): number {
     const robots =  grid.robots.filter(robot => robot.position[0] >= x && robot.position[0] < x + w && robot.position[1] >= y && robot.position[1] < y + h);
     const uniqueRobots = new Set(robots.map(robot => robot.position.toString()));
-    if (robots.length != uniqueRobots.size) {
-        return 0;
-    }
+    // if (robots.length != uniqueRobots.size) {
+    //     return 0;
+    // }
     return uniqueRobots.size;
 }
 
@@ -100,13 +102,20 @@ function xMasScore(grid: Grid): number {
     let bestScore = 0;
     let current = 0;
     for (let y = 0; y < grid.height; ++y) {
-        const count = countRobotsNoOverlap(grid, [0, y, grid.width, 1]);
-        if (count == 0 || (count != current + 1 && count != current + 2 && count != current + 3)) {
-            bestScore = Math.max(bestScore, current);
-            current = 0;
-        } else {
-            current = count;
+        const robots = grid.robots.filter(robot => robot.position[1] == y);
+        robots.sort((a, b) => a.position[0] - b.position[0]);
+        current = 0;
+        for (let i = 0; i < robots.length; ++i) {
+            if (robots[i].position[0] === robots[i+1]?.position[0] + 1) {
+                current++;
+            } else {
+                current = 0;
+            }
         }
+        if (current > bestScore) {
+            bestScore = current;
+        }
+
     }
     // console.log(bestScore);
     return bestScore;
@@ -120,22 +129,105 @@ for (let i = 0; i < 100; ++i) {
     moveRobots(data);
 }
 
+function cloneRobots(robots: Robot[]): Robot[] {
+    return robots.map(robot => ({position: [...robot.position], velocity: [...robot.velocity]}));
+}
 
 printGrid(data);
 console.log("Part 1:", safetyScore(data));
+const robots: Robot[] = cloneRobots(data.robots);
+
+function checkRobotsEquality(robots: Robot[], other: Robot[]): boolean {
+    if (robots.length != other.length) {
+        return false;
+    }
+    for (let i = 0; i < robots.length; ++i) {
+        if (robots[i].position[0] !== other[i].position[0] || robots[i].position[1] !== other[i].position[1] || robots[i].velocity[0] !== other[i].velocity[0] || robots[i].velocity[1] !== other[i].velocity[1]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+async function createImage(grid: Grid, i: number): Promise<void> {
+    const image = new Image(grid.width, grid.height);
+    for (let y = 0; y < grid.height; ++y) {
+        for (let x = 0; x < grid.width; ++x) {
+            const count = grid.robots.filter(robot => robot.position[0] === x && robot.position[1] === y).length;
+            // console.log(x, y, count);
+            image.setPixelAt(x+1, y+1, count > 0 ? 0xffffffff : 0xff);
+        }
+    }
+    const encoded = await image.encode();
+    await Deno.writeFile(`robots/robots_${i}.png`, encoded);
+}
 
 console.log("Looking for xMas trees");
 let i = 100;
 while (true) {
+    // await createImage(data, i);
     moveRobots(data);
     i++;
     if (i % 100000 == 0) {
         console.log(i, xMasScore(data));
     }
-    if (xMasScore(data) >= 20) {
-        console.log("Part 2:", i, xMasScore(data));
+    if (xMasScore(data) >= 12) {
+        console.log("Treee??:", i, xMasScore(data));
         printGrid(data);
     }
+    // console.log(robots);
+    if (checkRobotsEquality(robots, data.robots)) {
+        console.log("Robots are equal at", i);
+        break;
+    }
+
 }
+const equality = i;
+
+function computeDuplicates(robots: Robot[]): number {
+    let count = 0;
+    for (let i = 0; i < robots.length; ++i) {
+        for (let j = i+1; j < robots.length; ++j) {
+            if (robots[i].position[0] == robots[j].position[0] && robots[i].position[1] == robots[j].position[1]) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+// Min duplicates
+let scores = [];
+data.robots = cloneRobots(data.robots);
+for (let i = 0; i < equality; ++i) {
+    // scores.push(safetyScore(data));
+    scores.push(computeDuplicates(data.robots));
+    moveRobots(data);
+}
+const min = Math.min(...scores);
+console.log(min);
+let find = -1;
+while (find < 0) {
+    find = scores.indexOf(min, find + 1);
+    console.log(find+100);
+}
+
+// Safety scores
+scores = [];
+data.robots = cloneRobots(data.robots);
+for (let i = 0; i < equality; ++i) {
+    scores.push(safetyScore(data));
+    // scores.push(computeDuplicates(data.robots));
+    moveRobots(data);
+}
+const max = Math.max(...scores);
+console.log(max);
+find = -1;
+while (find < 0) {
+    find = scores.indexOf(max, find + 1);
+    console.log(find+100);
+}
+
+
 
 
