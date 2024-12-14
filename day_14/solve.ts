@@ -77,6 +77,16 @@ function countRobots(grid: Grid, [x, y, w, h]: [number, number, number, number])
     return grid.robots.filter(robot => robot.position[0] >= x && robot.position[0] < x + w && robot.position[1] >= y && robot.position[1] < y + h).length;
 }
 
+function countRobotsNoOverlap(grid: Grid, [x, y, w, h]: [number, number, number, number]): number {
+    const robots =  grid.robots.filter(robot => robot.position[0] >= x && robot.position[0] < x + w && robot.position[1] >= y && robot.position[1] < y + h);
+    const uniqueRobots = new Set(robots.map(robot => robot.position.toString()));
+    if (robots.length != uniqueRobots.size) {
+        return 0;
+    }
+    return uniqueRobots.size;
+}
+
+
 function safetyScore(grid: Grid): number {
     const w = Math.floor(grid.width / 2);
     const h = Math.floor(grid.height / 2);
@@ -86,6 +96,22 @@ function safetyScore(grid: Grid): number {
         countRobots(grid, [w+1, h+1, w, h]);
 }
 
+function xMasScore(grid: Grid): number {
+    let bestScore = 0;
+    let current = 0;
+    for (let y = 0; y < grid.height; ++y) {
+        const count = countRobotsNoOverlap(grid, [0, y, grid.width, 1]);
+        if (count == 0 || (count != current + 1 && count != current + 2 && count != current + 3)) {
+            bestScore = Math.max(bestScore, current);
+            current = 0;
+        } else {
+            current = count;
+        }
+    }
+    // console.log(bestScore);
+    return bestScore;
+}
+
 // const data = await loadGrid("sample.txt");
 const data = await loadGrid("input.txt");
 // console.log(data);
@@ -93,6 +119,23 @@ const data = await loadGrid("input.txt");
 for (let i = 0; i < 100; ++i) {
     moveRobots(data);
 }
+
+
 printGrid(data);
-console.log(safetyScore(data));
+console.log("Part 1:", safetyScore(data));
+
+console.log("Looking for xMas trees");
+let i = 100;
+while (true) {
+    moveRobots(data);
+    i++;
+    if (i % 100000 == 0) {
+        console.log(i, xMasScore(data));
+    }
+    if (xMasScore(data) >= 20) {
+        console.log("Part 2:", i, xMasScore(data));
+        printGrid(data);
+    }
+}
+
 
