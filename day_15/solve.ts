@@ -311,67 +311,31 @@ function printGrid(grid: Cell[][], move?: Move) {
     }
 }
 
-// const text = await Deno.readTextFile("sample.txt");
-const text = await Deno.readTextFile("input.txt");
-// const text = await Deno.readTextFile("test.txt");
-const [grid, moves] = parseData(text);
+measure(async () => {
+    // const text = await Deno.readTextFile("sample.txt");
+    const text = await Deno.readTextFile("input.txt");
 
-// console.log(grid);
-// console.log(moves);
+    const [grid, moves] = parseData(text);
+    let robot = findRobot(grid);
+    for (const move of moves) {
+        robot = moveRobot(grid, move, robot);
+    }
+    console.log("Part 1:", gps(grid));
 
-let robot = findRobot(grid);
-for (const move of moves) {
-    robot = moveRobot(grid, move, robot);
-}
-console.log("Part 1:", gps(grid));
+    const [grid2, moves2] = parseData2(text);
+    robot = findRobot(grid2);
 
-const [grid2, moves2] = parseData2(text);
-robot = findRobot(grid2);
-let i = 0;
 
-type Record = {
-    move?: Move;
-    grid: Cell[][];
-}
-const records: Record[] = [];
-function pushRecord(move?: Move) {
-    const clone_grid = grid2.map(row => row.slice());
-    records.push({ move: move, grid: clone_grid });
-}
+
+    for (const move of moves2) {
+        robot = moveRobot(grid2, move, robot);
+    }
+    console.log("Part 2:", gps(grid2));
+}, "Part 1&2");
 
 // await play(grid2);
 
-pushRecord();
-for (const move of moves2) {
-    pushRecord(move);
-    robot = moveRobot(grid2, move, robot);
-}
-console.log("Part 2:", gps(grid2));
-
-
-// while (true) {
-//     const buf = new Uint8Array(3);
-//     await Deno.stdin.setRaw(true);
-//     await Deno.stdin.read(buf);
-//     await Deno.stdin.setRaw(false);
-
-//     // detect ctrl-c
-//     if (buf[0] === 3) {
-//         break;
-//     }
-
-//     console.log(i);
-//     if (buf[0] === 27 && buf[1] === 91 && buf[2] === 68) { // Left arrow key
-//         if (i > 0) {
-//             i--;
-//             printGrid(records[i].grid, records[i].move);
-//         }
-//     } else {
-//         i++;
-//         printGrid(records[i].grid, records[i].move);   
-//     }
-// }
-
+// Useful for debugging / discovering edge cases
 async function play(grid: Cell[][]) {
     while (true) {
         const buf = new Uint8Array(3);
