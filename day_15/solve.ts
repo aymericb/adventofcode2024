@@ -192,9 +192,15 @@ function moveBox2(grid: Cell[][], dmove: [number, number], box: [number, number]
             return checks.findIndex(c => c[0] === check[0] && c[1] === check[1]) === index;
         });
 
+        const clone_grid = grid.map(row => row.slice());
         should_move = true;
         for (const check of checks) {
-            should_move = should_move && moveBox2(grid, dmove, check);
+            should_move = should_move && moveBox2(clone_grid, dmove, check);;
+        }
+        if (should_move) {
+            for (const check of checks) {
+                moveBox2(grid, dmove, check);
+            }
         }
     }
 
@@ -306,8 +312,8 @@ function printGrid(grid: Cell[][], move?: Move) {
 }
 
 // const text = await Deno.readTextFile("sample.txt");
-// const text = await Deno.readTextFile("input.txt");
-const text = await Deno.readTextFile("test.txt");
+const text = await Deno.readTextFile("input.txt");
+// const text = await Deno.readTextFile("test.txt");
 const [grid, moves] = parseData(text);
 
 // console.log(grid);
@@ -322,31 +328,75 @@ console.log("Part 1:", gps(grid));
 const [grid2, moves2] = parseData2(text);
 robot = findRobot(grid2);
 let i = 0;
-for (const move of moves2) {
-    // if (move === Move.Left && grid2[robot[0]][robot[1]-1] === Cell.BoxRight) {
-    //     printGrid(grid2);
-    //     console.log(move);
-    // }
-    printGrid(grid2, move);
-    // console.log(i++, move);
-    robot = moveRobot(grid2, move, robot);
 
-    // if (move === Move.Left && grid2[robot[0]][robot[1]-1] === Cell.BoxRight) {
-    //     printGrid(grid2);
-    //     // break;
-    // }
-    // // i++;
-    // // if (i > 20) {
-    // //     break;
-    // // }
-
-    // wait for any key press
-    // if (i > 20) {
-        const buf = new Uint8Array(1);
-        await Deno.stdin.read(buf);
-    // }
-    // printGrid(grid2);
-
+type Record = {
+    move?: Move;
+    grid: Cell[][];
 }
-printGrid(grid2);
+const records: Record[] = [];
+function pushRecord(move?: Move) {
+    const clone_grid = grid2.map(row => row.slice());
+    records.push({ move: move, grid: clone_grid });
+}
+
+// await play(grid2);
+
+pushRecord();
+for (const move of moves2) {
+    pushRecord(move);
+    robot = moveRobot(grid2, move, robot);
+}
 console.log("Part 2:", gps(grid2));
+
+
+// while (true) {
+//     const buf = new Uint8Array(3);
+//     await Deno.stdin.setRaw(true);
+//     await Deno.stdin.read(buf);
+//     await Deno.stdin.setRaw(false);
+
+//     // detect ctrl-c
+//     if (buf[0] === 3) {
+//         break;
+//     }
+
+//     console.log(i);
+//     if (buf[0] === 27 && buf[1] === 91 && buf[2] === 68) { // Left arrow key
+//         if (i > 0) {
+//             i--;
+//             printGrid(records[i].grid, records[i].move);
+//         }
+//     } else {
+//         i++;
+//         printGrid(records[i].grid, records[i].move);   
+//     }
+// }
+
+async function play(grid: Cell[][]) {
+    while (true) {
+        const buf = new Uint8Array(3);
+        await Deno.stdin.setRaw(true);
+        await Deno.stdin.read(buf);
+        await Deno.stdin.setRaw(false);
+    
+        // detect ctrl-c
+        if (buf[0] === 3) {
+            break;
+        }
+
+        let move: Move | undefined;
+        if (buf[0] === 27 && buf[1] === 91 && buf[2] === 68) { // Left arrow key
+            move = Move.Left;
+        } else if (buf[0] === 27 && buf[1] === 91 && buf[2] === 67) { // Right arrow key
+            move = Move.Right;
+        } else if (buf[0] === 27 && buf[1] === 91 && buf[2] === 65) { // Up arrow key
+            move = Move.Up;
+        } else if (buf[0] === 27 && buf[1] === 91 && buf[2] === 66) { // Down arrow key
+            move = Move.Down;
+        }
+        if (move) {
+            robot = moveRobot(grid, move, robot);
+        }
+        printGrid(grid, move);           
+    }
+}
