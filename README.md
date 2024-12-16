@@ -23,3 +23,4 @@ No chance being on the leaderboard since I'm asleep when new puzzles are reveale
 - [Day 13](day_13)
 - [Day 14](day_14)
 - [Day 15](day_15)
+- [Day 16](day_16)
