@@ -174,7 +174,7 @@ function rotateLeft(deer: Deer): Deer {
 let move_count = 0;
 
 
-function visitInternal(maze: Maze, deer: Deer | null, actions: Action[], visited: number[], newActions: Action[]): Action[] | null {
+function visitInternal(maze: Maze, deer: Deer | null, actions: Action[], visited: Map<number, number>, newActions: Action[]): Action[] | null {
 
     move_count++;
     if (move_count % 100000 === 0) {
@@ -186,12 +186,16 @@ function visitInternal(maze: Maze, deer: Deer | null, actions: Action[], visited
     }
 
     const key = computeKey(maze, deer.position);
-    if (visited.includes(key)) {
+    const points = computePoints(actions);
+    const visited_points = visited.get(key);
+
+    if (visited_points !== undefined && visited_points < points) {
         // console.log("Already visited", key);
         return null;
     }
 
-    visited = [...visited, key];
+
+    visited.set(key, points);
     actions = [...actions, ...newActions];
     return visit(maze, deer, actions, visited);
 }
@@ -201,7 +205,7 @@ function computePoints(actions: Action[]): number {
 }
 
 let best = Number.MAX_SAFE_INTEGER;
-function visit(maze: Maze, deer: Deer, actions: Action[], visited: number[]): Action[] | null {
+function visit(maze: Maze, deer: Deer, actions: Action[], visited: Map<number, number>): Action[] | null {
 
     const points = computePoints(actions);
 
@@ -234,7 +238,7 @@ function visit(maze: Maze, deer: Deer, actions: Action[], visited: number[]): Ac
 }
 
 
-const found = visit(maze, maze.deer, [], []);
+const found = visit(maze, maze.deer, [], new Map());
 
 console.log(found);
 if (found) {
