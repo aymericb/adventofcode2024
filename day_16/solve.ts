@@ -6,8 +6,8 @@ function measure<T>(fn: () => T, label: string): T {
     return result;
 }
 
-const text = await Deno.readTextFile("sample.txt");
-// const text = await Deno.readTextFile("input.txt");
+// const text = await Deno.readTextFile("sample.txt");
+const text = await Deno.readTextFile("input.txt");
 
 enum Cell {
     Wall = '#',
@@ -185,13 +185,13 @@ function visitInternal(maze: Maze, deer: Deer | null, actions: Action[], visited
         return null;
     }
 
-    const key = computeKeyWithDirection(maze, deer.position, deer.direction);
+    const key = computeKey(maze, deer.position);
     actions = [...actions, ...newActions];
 
     const points = computePoints(actions);
     const visited_points = visited.get(key);
 
-    if (visited_points !== undefined && visited_points < points) {
+    if (visited_points !== undefined && visited_points + 1000 < points) {
         // console.log("Already visited", key);
         return null;
     }
@@ -301,6 +301,7 @@ if (found) {
     for (const paths of found) {
         mark(maze, maze.deer, [...paths], visited);
     }
+    visited.add(computeKey(maze, maze.deer.position));
     printMaze(maze, visited);
     console.log("Part 2 score", visited.size);
 }
