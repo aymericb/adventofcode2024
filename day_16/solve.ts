@@ -6,7 +6,7 @@ function measure<T>(fn: () => T, label: string): T {
     return result;
 }
 
-const text = await Deno.readTextFile("sample1.txt");
+const text = await Deno.readTextFile("sample.txt");
 // const text = await Deno.readTextFile("input.txt");
 
 enum Cell {
@@ -98,12 +98,12 @@ function computeKey(maze: Maze, [row, col]: [number, number]): number {
     return maze.width * row + col;
 }
 
-// const direction_count = Object.keys(Direction).length;
-// function computeKey(maze: Maze, [row, col]: [number, number], direction: Direction): number {
-//     return maze.width * maze.height * direction_count * row + maze.width * col + direction_count * direction_count * direction;
-// }
+const direction_count = Object.keys(Direction).length;
+function computeKeyWithDirection(maze: Maze, [row, col]: [number, number], direction: Direction): number {
+    const dir = Object.values(Direction).indexOf(direction);
+    return maze.width * row * direction_count + col * direction_count + dir;
+}
 
-// const cache = new Map<number, boolean>();
 
 
 function advance(maze: Maze, deer: Deer): Deer | null {
@@ -185,7 +185,9 @@ function visitInternal(maze: Maze, deer: Deer | null, actions: Action[], visited
         return null;
     }
 
-    const key = computeKey(maze, deer.position);
+    const key = computeKeyWithDirection(maze, deer.position, deer.direction);
+    actions = [...actions, ...newActions];
+
     const points = computePoints(actions);
     const visited_points = visited.get(key);
 
@@ -196,7 +198,6 @@ function visitInternal(maze: Maze, deer: Deer | null, actions: Action[], visited
 
 
     visited.set(key, points);
-    actions = [...actions, ...newActions];
     return visit(maze, deer, actions, visited);
 }
 
