@@ -6,8 +6,8 @@ function measure<T>(fn: () => T, label: string): T {
     return result;
 }
 
-// const text = await Deno.readTextFile("sample.txt");
-const text = await Deno.readTextFile("input.txt");
+const text = await Deno.readTextFile("sample1.txt");
+// const text = await Deno.readTextFile("input.txt");
 
 enum Cell {
     Wall = '#',
@@ -174,7 +174,7 @@ function rotateLeft(deer: Deer): Deer {
 let move_count = 0;
 
 
-function visitInternal(maze: Maze, deer: Deer | null, actions: Action[], visited: Map<number, number>, newActions: Action[]): Action[] | null {
+function visitInternal(maze: Maze, deer: Deer | null, actions: Action[], visited: Map<number, number>, newActions: Action[]): Action[][] | null {
 
     move_count++;
     if (move_count % 100000 === 0) {
@@ -205,7 +205,7 @@ function computePoints(actions: Action[]): number {
 }
 
 let best = Number.MAX_SAFE_INTEGER;
-function visit(maze: Maze, deer: Deer, actions: Action[], visited: Map<number, number>): Action[] | null {
+function visit(maze: Maze, deer: Deer, actions: Action[], visited: Map<number, number>): Action[][] | null {
 
     const points = computePoints(actions);
 
@@ -215,7 +215,7 @@ function visit(maze: Maze, deer: Deer, actions: Action[], visited: Map<number, n
             best = points;
             console.log("New best", best);
         }
-        return actions;
+        return [actions];
     }
 
     if (points > best) {
@@ -228,19 +228,78 @@ function visit(maze: Maze, deer: Deer, actions: Action[], visited: Map<number, n
         visitInternal(maze, advance(maze, rotateLeft(deer)), actions, visited, [Action.RotateLeft, Action.Advance])
     ].filter((move) => move !== null);
 
+
+
     if (moves.length === 0) {
         return null;
     }
 
-    const smallest = moves.reduce((best, move) => computePoints(best) < computePoints(move) ? best : move, moves[0]);
+    const flat_moves = moves.flat();
+    if (flat_moves.length === 0) {
+        return null;
+    }
 
-    return smallest;
+    const smallest = flat_moves.reduce((best, move) => 
+        computePoints(best) < computePoints(move) ? best : move, 
+        flat_moves[0]
+    );
+    const smallest_points = computePoints(smallest);
+    const paths = flat_moves.filter(move => computePoints(move) === smallest_points);
+
+    return paths;
+}
+
+function mark(maze: Maze, deer: Deer, actions: Action[], visited: Set<number>) {
+    if (actions.length === 0) {
+        return;
+    }
+
+    const action = actions.shift();
+
+    switch (action) {
+        case Action.Advance:
+            deer = advance(maze, deer)!;
+            break;
+        case Action.RotateRight:
+            deer = rotateRight(deer);
+            break;
+        case Action.RotateLeft:
+            deer = rotateLeft(deer);
+            break;
+    }
+
+    visited.add(computeKey(maze, deer.position));
+    mark(maze, deer, actions, visited);
 }
 
 
-const found = visit(maze, maze.deer, [], new Map());
 
-console.log(found);
+function printMaze(maze: Maze, visited: Set<number>) {
+    for (let y = 0; y < maze.height; y++) {
+        let line = "";
+        for (let x = 0; x < maze.width; x++) {
+            const key = computeKey(maze, [y, x]);
+            if (visited.has(key)) {
+                line += "O"
+            } else {
+                line += maze.grid[y][x];
+            }
+        }
+        console.log(line);
+    }
+}
+
+const cache = new Map<number, number>();
+const found = visit(maze, maze.deer, [], cache);
+// console.log(found);
 if (found) {
-    console.log(computePoints(found));
+    const score = computePoints(found[0]);
+    console.log("Part 1 score", score);
+
+    const visited = new Set<number>();
+    for (const paths of found) {
+        mark(maze, maze.deer, [...paths], visited);
+    }
+    printMaze(maze, visited);
+    console.log("Part 2 score", visited.size);
 }
