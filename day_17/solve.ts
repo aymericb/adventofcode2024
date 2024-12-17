@@ -135,6 +135,7 @@ function runOnce(machine: Machine): void {
 function run(machine: Machine): string {
     while (machine.ip < machine.program.length) {
         runOnce(machine);
+        // console.log(machine);
     }
     return machine.output.join(",");
 }
@@ -187,6 +188,16 @@ function unitTests() {
     run(machine);
     assertEquals(machine.registers[1], 44354);
 
+    machine = {
+        ip: 0,
+        registers: [/*2024*/117440, 0, 0],
+        program: [0,3,5,4,3,0],
+        output: []
+    }
+
+    run(machine);
+    assertEquals(machine.output, machine.program);
+
 
     console.log("Unit tests passed!");
 }
@@ -196,4 +207,107 @@ function unitTests() {
 // const text = await Deno.readTextFile("sample.txt");
 const text = await Deno.readTextFile("input.txt");
 
-console.log(run(parseData(text)));
+console.log("Part 1:", run(parseData(text)));
+const machine_original = parseData(text);
+
+const min = Math.pow(8, 15);                  // 8^15
+const max = 7 * Math.pow(8, 15);              // 7 * 8^15
+// let machine = structuredClone(machine_original);
+// machine.registers[0] = min
+// run(machine);
+// console.log(machine.output.length);
+
+function runOnceCompiled(machine: Machine): boolean
+{
+    // B = (A % 8) & 0b111; // Step 2,4
+    // B = B ^ 3;           // Step 1,3
+    // C = Math.floor(A / (2 ** B)); // Step 7,5
+    // A = Math.floor(A / 8);        // Step 0,3
+    // B = B ^ C;           // Step 4,1
+    // B = B ^ 5;           // Step 1,5
+    // return B % 8;        // Step 5,5
+
+    machine.registers[1] = (machine.registers[0] % 8) & 0b111; // Step 2,4
+    machine.registers[1] = machine.registers[1] ^ 3;           // Step 1,3
+    machine.registers[2] = Math.floor(machine.registers[0] / (2 ** machine.registers[1])); // Step 7,5
+    machine.registers[0] = Math.floor(machine.registers[0] / 8);        // Step 0,3
+    machine.registers[1] = machine.registers[1] ^ machine.registers[2];           // Step 4,1
+    machine.registers[1] = machine.registers[1] ^ 5;           // Step 1,5
+
+    machine.output.push(machine.registers[1] % 8);
+    return machine.registers[0] === 0;
+}
+
+function runCompiled(machine: Machine): string {
+    while (!runOnceCompiled(machine)) { }
+    return machine.output.join(",");
+}
+
+// console.log("Part 1:", runCompiled(structuredClone(machine_original)));
+
+
+
+// function round(A: number, B: number, C: number): number {
+//     B = (A % 8) & 0b111; // Step 2,4
+//     B = B ^ 3;           // Step 1,3
+//     C = Math.floor(A / (2 ** B)); // Step 7,5
+//     A = Math.floor(A / 8);        // Step 0,3
+//     B = B ^ C;           // Step 4,1
+//     B = B ^ 5;           // Step 1,5
+//     return B % 8;        // Step 5,5
+// }
+// console.log(round(45483412, 0, 0));
+// console.log(round(5685426, 355337, 355339));
+
+// machine_original = {
+//     ip: 0,
+//     registers: [/*2024*/117440, 0, 0],
+//     program: [0,3,5,4,3,0],
+//     output: []
+// }
+
+// function computeKey(machine: Machine): string {
+//     return `${machine.registers[0]},${machine.registers[1]},${machine.registers[2]}`;
+// }
+// const failed = new Set<string>();
+// const cache = new Map<string, number[]>();
+
+console.log("Range: ", max-min);
+let last = 0;
+for (let i = min; i <= max; i++) {
+    const machine = structuredClone(machine_original);
+    machine.registers[0] = i;
+    // machine.registers[0] = 6;
+
+    run(machine);
+    // console.log(i, runCompiled(machine));
+    // console.log(i, run(machine), machine.output.length);
+    if (machine.output[0] === 2) {
+        console.log(i, i-last);
+        last = i;
+    }
+    // if (i % 100000 === 0) {
+    //     console.log(i);
+    // }
+
+    // while (machine.ip < machine.program.length) {
+    //     const key = computeKey(machine);
+    //     const value = cache.get(key);
+    //     if (machine.ip === 0 && value) {
+    //         machine.output = [...machine.output, ...value];
+    //         break;
+    //     } else {
+    //         runOnce(machine);
+    //         cache.set(key, machine.output);
+    //     }
+    // }
+    
+    // runCompiled(machine);
+
+    const equal = 
+        machine.output.length === machine.program.length &&
+        machine.output.every((value, index) => value === machine.program[index]);
+    if (equal) {
+        console.log(i, machine.output);
+    }
+}
