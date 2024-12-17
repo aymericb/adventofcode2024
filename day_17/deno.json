@@ -1,0 +1,5 @@
+{
+    "tasks": {
+        "solve": "deno run --allow-read --v8-flags=--stack-size=1000000 solve.ts"
+    }
+}
