@@ -110,7 +110,7 @@ function runOnce(machine: Machine): void {
             break;
         }
         case Opcode.bst: {
-            machine.registers[1] = (getCombo(machine, operand) % 8) & 0b111;
+            machine.registers[1] = (getCombo(machine, operand) & 7) & 0b111; // Fix JS %8 modulo
             break;
         }
         case Opcode.jnz: {
@@ -124,7 +124,7 @@ function runOnce(machine: Machine): void {
             break;
         }
         case Opcode.out: {
-            machine.output.push(getCombo(machine, operand) % 8);
+            machine.output.push(getCombo(machine, operand) & 7);  // Fix JS %8 modulo
             break;
         }
     }
@@ -200,7 +200,7 @@ function unitTests() {
     console.log("Unit tests passed!");
 }
 
-// unitTests();
+unitTests();
 
 // const text = await Deno.readTextFile("sample.txt");
 // const text = await Deno.readTextFile("sample2.txt");
@@ -240,29 +240,31 @@ function runWith(value: number): Machine {
 }
 
 
-console.log(min, max);
-// console.log(searchRange(min, max, 1));
 
-// console.log("Part 2:", runWith(202591857814718));
 
-let div = 100_000_000;
-const range = max-min;
-let last = 0;
-
-for (let i=min; i<=max; i++) {
-
-    let progress = Math.ceil((i-min)/range*div);
-    if (progress > last) {
-        console.log("Progress: ", (i-min)/range*100.0, "%", i);
-        last = progress;
+function* generateA(program: number[], output: number[]): Generator<number> {
+    if (output.length === 0) {
+        yield 0;
+        return;
     }
 
-    const machine = runWith(i);
-    if (machine.output.length === machine.program.length &&
-        machine.output.every((value, index) => value === machine.program[index])) {
-        console.log("Found match!");
-        console.log(i, machine.output);
-        break;
+    // Get all solutions for the shorter output
+    for (const ah of generateA(program, output.slice(1))) {
+
+        // Try all possible values for the least significant digit (in base 8)
+        for (let al = 0; al < 8; al++) {
+            const a = ah * 8 + al;
+            const machine = runWith(a);
+
+            // Check if this value produces the desired output
+            if (machine.output.length === output.length && 
+                machine.output.every((val, idx) => val === output[idx])) {
+                yield a;
+            }
+        }
     }
 }
 
+
+const solutions = [...generateA(machine_original.program, machine_original.program)];
+console.log("Part 2:", solutions[0]); // Get first solution
